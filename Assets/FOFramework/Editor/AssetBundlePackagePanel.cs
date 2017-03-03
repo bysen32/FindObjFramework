@@ -7,7 +7,6 @@ using Assets.FOFramework.Editor.AssetBundle;
 
 public class AssetBundlePackagePanel : EditorWindow {
 
-    private ABPathFilterList pathFilters;
     private ReorderableList reorderList;
 
     [MenuItem("Tools/AB Package Setting")]
@@ -16,59 +15,73 @@ public class AssetBundlePackagePanel : EditorWindow {
     }
 
     private void OnEnable() {
-        pathFilters = new ABPathFilterList();
-        reorderList = new ReorderableList(pathFilters.Filters, typeof(List<string>));
+        if (reorderList == null)
+            InitReorderableList();
+    }
 
-        reorderList.draggable = true;
+    private void InitReorderableList() {
+        reorderList = new ReorderableList(ABPathFilterList.Instance.Filters, typeof(ABPathFilter));
 
         reorderList.onAddCallback = (ReorderableList list) => {
-            pathFilters.AppendEmpty();
+            ABPathFilterList.Instance.AppendEmpty();
             Repaint();
         };
+        reorderList.drawElementCallback = DrawElementCallback;
+        reorderList.drawHeaderCallback = DrawHeaderCallback;
+    }
+    private void DrawElementCallback(Rect rect, int index, bool isActive, bool isFocused) {
+        const int GAP = 5;
+        float RIGHT_BORDER = rect.xMax;
+        ABPathFilter filter = ABPathFilterList.Instance.Filters[index];
 
-        reorderList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) => {
-            const int GAP = 5;
-            float RIGHT_BORDER = rect.xMax;
-            ABPathFilter filter = pathFilters.Filters[index];
+        rect.y += 1;
+        rect.width = 16;
+        rect.height = 18;
 
-            rect.y += 1;
-            rect.width = 16;
-            rect.height = 18;
+        filter.enable = GUI.Toggle(rect, filter.enable, GUIContent.none);
 
-            filter.enable = GUI.Toggle(rect, filter.enable, GUIContent.none);
+        rect.xMin = rect.xMax + GAP;
+        rect.xMax = RIGHT_BORDER - 300;
+        GUI.enabled = false;
+        GUI.TextField(rect, filter.path);
+        GUI.enabled = true;
 
-            rect.xMin = rect.xMax + GAP;
-            rect.xMax = RIGHT_BORDER - 300;
-            GUI.enabled = false;
-            filter.path = GUI.TextField(rect, filter.path);
-            GUI.enabled = true;
+        rect.xMin = rect.xMax + GAP;
+        rect.width = 50;
+        if (GUI.Button(rect, "Select")) {
+            filter.path = SelectFolder();
+        }
 
-            rect.xMin = rect.xMax + GAP;
-            rect.width = 50;
-            if (GUI.Button(rect, "Select")) {
-                Debug.Log("On Select Button");
-            }
+        rect.xMin = rect.xMax + GAP;
+        rect.xMax = RIGHT_BORDER;
+        filter.filter = GUI.TextField(rect, filter.filter);
+    }
+    private void DrawHeaderCallback(Rect rect) {
+        GUI.Label(rect, "Asset Folder Config");
+    }
 
-            rect.xMin = rect.xMax + GAP;
-            rect.xMax = RIGHT_BORDER;
-            filter.filter = GUI.TextField(rect, filter.filter);
-        };
-
-        reorderList.drawHeaderCallback = (Rect rect) => {
-            GUI.Label(rect, "Path Config");
-        };
+    private string SelectFolder() {
+        string path = EditorUtility.OpenFolderPanel("Select Folder", Application.dataPath, string.Empty);
+        path = path.Replace(Application.dataPath, "Assets");
+        return path;
     }
 
     static void BuildAssetBundle() {
 
+    }
+    static void SavePathFilters() {
+        ABPathFilterList.SavePathFilter();
     }
 
     private void OnGUI() {
         reorderList.DoLayoutList();
 
         GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Save", GUILayout.Width(50))) {
+            SavePathFilters();
+        }
         GUILayout.FlexibleSpace();
-        if (GUILayout.Button("build", GUILayout.Width(50))) {
+        if (GUILayout.Button("Build", GUILayout.Width(50))) {
             BuildAssetBundle();
         }
         GUILayout.EndHorizontal();

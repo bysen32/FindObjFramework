@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Assets.FOFramework.Editor.AssetBundle {
 
+    [Serializable]
     public class ABPathFilter {
         public bool     enable  = true;
         public string   path    = string.Empty;
