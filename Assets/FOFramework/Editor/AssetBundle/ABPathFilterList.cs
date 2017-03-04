@@ -13,7 +13,9 @@ namespace Assets.FOFramework.Editor.AssetBundle {
             get {
                 if (filters == null) {
                     filters = new List<ABPathFilter>();
-                    AppendEmpty();
+                    ABPathFilter filter = new ABPathFilter();
+                    filters.Add(filter);
+                    LocalSave();
                 }
                 return filters;
             }
@@ -39,18 +41,12 @@ namespace Assets.FOFramework.Editor.AssetBundle {
             }
         }
 
-        public static void SavePathFilter() {
+        private static void LocalSave() {
             if (AssetDatabase.LoadAssetAtPath<ABPathFilterList>(ConfigFilePath)) {
                 EditorUtility.SetDirty(Instance);
             } else {
                 AssetDatabase.CreateAsset(Instance, ConfigFilePath);
             }
         }
-
-        public void AppendEmpty() {
-            ABPathFilter filter = new ABPathFilter();
-            Filters.Add(filter);
-        }
-
     }
 }
